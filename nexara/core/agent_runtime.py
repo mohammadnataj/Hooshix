@@ -2,48 +2,42 @@ from typing import Dict, Any
 
 from nexara.memory.memory_store import MemoryStore
 from nexara.core.agent_state import AgentState
+from nexara.llm.llm_client import LLMClient
 
 
 class AgentRuntime:
     """
-    Core brain of Nexara Agent.
-    Responsible for:
-    - Reading memory
-    - Updating state
-    - Building prompt
-    - Producing response (via LLM layer later)
+    Core brain of Nexara Agent (LLM-connected version)
     """
 
-    def __init__(self, memory: MemoryStore, state: AgentState):
+    def __init__(self, memory: MemoryStore, state: AgentState, llm: LLMClient):
         self.memory = memory
         self.state = state
+        self.llm = llm
 
     # -------------------------
-    # 🧠 INPUT PROCESSING
+    # 🧠 MAIN PIPELINE
     # -------------------------
 
     def process_input(self, user_id: str, message: str) -> Dict[str, Any]:
-        """
-        Main pipeline entry point
-        """
 
-        # 1. Store memory
+        # 1. Store user message
         self.memory.add_memory(
             content=f"User: {message}",
             metadata={"user_id": user_id}
         )
 
-        # 2. Update state (simple heuristic for now)
+        # 2. Update agent state
         self._update_state(message)
 
         # 3. Retrieve relevant memory
         relevant_memory = self.memory.search_memory(message)
 
-        # 4. Build prompt (LLM-ready structure)
+        # 4. Build prompt
         prompt = self._build_prompt(message, relevant_memory)
 
-        # 5. Generate response (placeholder for LLM)
-        response = self._generate_response(prompt)
+        # 5. Call LLM (REAL INTELLIGENCE)
+        response = self.llm.generate(prompt)
 
         # 6. Store agent response
         self.memory.add_memory(
@@ -62,41 +56,42 @@ class AgentRuntime:
     # -------------------------
 
     def _update_state(self, message: str):
-        """
-        Simple rule-based state updates (Phase 1)
-        """
 
-        message_lower = message.lower()
+        msg = message.lower()
 
-        if any(word in message_lower for word in ["thanks", "good", "nice", "great"]):
+        if any(w in msg for w in ["thanks", "good", "great", "nice"]):
             self.state.apply_event("positive_interaction")
 
-        elif any(word in message_lower for word in ["bad", "hate", "angry", "stupid"]):
+        elif any(w in msg for w in ["bad", "hate", "angry", "stupid"]):
             self.state.apply_event("negative_interaction")
 
         else:
             self.state.apply_event("neutral_chat")
 
     # -------------------------
-    # 🧠 PROMPT BUILDER
+    # 🧠 PROMPT ENGINE
     # -------------------------
 
     def _build_prompt(self, message: str, memory: list) -> str:
-        """
-        Converts state + memory into LLM prompt
-        """
 
         memory_text = "\n".join(
-            [m["content"] for m in memory[-5:]]  # last 5 memories
+            [m["content"] for m in memory[-5:]]
         )
 
         prompt = f"""
-You are an AI Agent with controlled behavior.
+You are Nexara, a controlled AI Agent.
 
-Name: {self.state.name}
-Emotion: {self.state.emotion} ({self.state.emotion_intensity})
-Trust: {self.state.trust}
-Familiarity: {self.state.familiarity}
+You have:
+- Persistent memory
+- Emotional state
+- Trust system
+- Behavioral rules
+
+Current State:
+- Name: {self.state.name}
+- Emotion: {self.state.emotion} ({self.state.emotion_intensity})
+- Trust: {self.state.trust}
+- Familiarity: {self.state.familiarity}
 
 Recent Memory:
 {memory_text}
@@ -104,25 +99,13 @@ Recent Memory:
 User Message:
 {message}
 
-Respond as a consistent, controlled AI agent.
+Rules:
+- Be consistent with your personality
+- Do not break character
+- Use memory when relevant
+- Respond naturally but controlled
+
+Now respond:
 """
 
         return prompt
-
-    # -------------------------
-    # 🧠 RESPONSE GENERATION (TEMP)
-    # -------------------------
-
-    def _generate_response(self, prompt: str) -> str:
-        """
-        Placeholder for LLM integration (Phase 2)
-        """
-
-        # For now: deterministic mock response
-        if self.state.trust < 0.3:
-            return "I'm not sure I trust you yet."
-
-        if self.state.emotion == "happy":
-            return "I'm glad to talk with you."
-
-        return "I understand."
