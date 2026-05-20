@@ -3,6 +3,7 @@ from typing import Dict, Any
 from nexara.memory.memory_store import MemoryStore
 from nexara.core.agent_state import AgentState
 from nexara.llm.llm_client import LLMClient
+from nexara.explain.explain_engine import ExplainabilityEngine
 
 
 class AgentRuntime:
@@ -10,10 +11,11 @@ class AgentRuntime:
     Core brain of Nexara Agent (LLM-connected version)
     """
 
-    def __init__(self, memory: MemoryStore, state: AgentState, llm: LLMClient):
+    def __init__(self, memory: MemoryStore, state: AgentState, llm: LLMClient, explain: ExplainabilityEngine = None):
         self.memory = memory
         self.state = state
         self.llm = llm
+        self.explain = explain
 
     # -------------------------
     # 🧠 MAIN PIPELINE
@@ -44,6 +46,16 @@ class AgentRuntime:
             content=f"Agent: {response}",
             metadata={"type": "agent_response"}
         )
+
+        # 7. Log decision for explainability
+        if self.explain:
+            self.explain.log_decision(
+                user_input=message,
+                prompt=prompt,
+                memory_used=relevant_memory,
+                state_snapshot=self.state.to_dict(),
+                response=response
+            )
 
         return {
             "response": response,
