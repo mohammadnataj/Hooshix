@@ -23,86 +23,118 @@ class AgentRuntime:
         llm: LLMClient,
         explain: ExplainabilityEngine = None
     ):
+        """
+        Initialize AgentRuntime
+        """
+
         self.memory = memory
         self.state = state
         self.llm = llm
         self.explain = explain
 
-        # Control layers
+        # 🧠 Control layers
         self.policy_engine = PolicyEngine()
         self.trace = ExplainTrace()
 
         logger.info("AgentRuntime initialized successfully")
 
     # -------------------------
-    # MAIN PIPELINE
+    # 🧠 MAIN PIPELINE
     # -------------------------
-    def process_input(self, user_id: str, message: str) -> Dict[str, Any]:
 
+    def process_input(self, user_id: str, message: str) -> Dict[str, Any]:
         try:
             self._validate_input(user_id, message)
 
+
+# -------------------------
+# POLICY CHECK
+# -------------------------
+
+policy_result = self.policy_engine.evaluate(
+    message,
+    self.state.to_dict()
+)
+
+decision = policy_result["decision"]
+
+if decision == "block":
+    return {
+        "response": "Request blocked by policy engine.",
+        "state": self.state.to_dict(),
+        "memory_count": len(self.memory.memories),
+        "reasoning": [
+            f"Policy blocked request: {policy_result.get('reason')}"
+        ]
+    }
+
+if decision == "modify":
+    message = policy_result["input"]
+
+    self.trace.add(
+        f"Policy modified input ({policy_result.get('reason')})"
+    )
             logger.info(f"Processing input from user: {user_id}")
 
-            # 1. POLICY CHECK (FIRST GATE)
-            policy_result = self.policy_engine.evaluate(
-                message,
-                self.state.to_dict()
-            )
-
-            decision = policy_result["decision"]
-
-            if decision == "block":
-                self.trace.add({
-                    "type": "policy_block",
-                    "input": message,
-                    "reason": policy_result.get("reason")
-                })
-
-                return self._error_response("Blocked by policy engine")
-
-            if decision == "modify":
-                self.trace.add({
-                    "type": "policy_modify",
-                    "before": message,
-                    "after": policy_result["input"],
-                    "reason": policy_result.get("reason")
-                })
-                message = policy_result["input"]
-
-            else:
-                self.trace.add({
-                    "type": "policy_allow",
-                    "input": message
-                })
-
-            # 2. MEMORY STORE
+            # 1. Store input
             self.memory.add_memory(
                 content=f"User: {message}",
                 metadata={"user_id": user_id}
             )
 
-            # 3. STATE UPDATE
+            # 2. State update
             self._update_state(message)
 
-            # 4. MEMORY RETRIEVAL
+            # 3. Memory retrieval
             relevant_memory = self.memory.search_memory(message)
 
-            # 5. PROMPT BUILD
+            # 4. Build prompt
             prompt = self._build_prompt(message, relevant_memory)
 
-            # 6. LLM CALL
+            # 5. Policy check
+            policy_result = self.policy_engine.evaluate(message, self.state)
+
+            if policy_result["decision"] == "block":
+                self.trace.log({
+                    "input": message,
+                    "decision": "block",
+                    "rule": policy_result.get("reason"),
+                    "before": message,
+                    "after": None
+                })
+
+                return self._error_response("Blocked by policy engine")
+
+            if policy_result["decision"] == "modify":
+                self.trace.log({
+                    "input": message,
+                    "decision": "modify",
+                    "rule": policy_result.get("reason"),
+                    "before": message,
+                    "after": policy_result["input"]
+                })
+                message = policy_result["input"]
+
+            else:
+                self.trace.log({
+                    "input": message,
+                    "decision": "allow",
+                    "rule": "none",
+                    "before": message,
+                    "after": message
+                })
+
+            # 6. LLM call
             response = self.llm.generate(prompt)
 
-            # 7. STORE RESPONSE
+            # 7. Store response
             self.memory.add_memory(
                 content=f"Agent: {response}",
                 metadata={"type": "agent_response"}
             )
 
-            # 8. EXPLAINABILITY
+            # 8. Explainability engine (optional legacy)
             reasoning = []
-
             if self.explain:
                 self.explain.log_decision(
                     user_input=message,
@@ -116,7 +148,7 @@ class AgentRuntime:
                 "response": response,
                 "state": self.state.to_dict(),
                 "memory_count": len(self.memory.memories),
-                "trace": self.trace.get_all() if hasattr(self.trace, "get_all") else [],
+                "trace": self.trace.get_all(),
                 "reasoning": reasoning
             }
 
@@ -125,8 +157,9 @@ class AgentRuntime:
             return self._error_response(str(e))
 
     # -------------------------
-    # HELPERS
+    # 🧠 VALIDATION
     # -------------------------
+
     def _validate_input(self, user_id: str, message: str):
         if not user_id or not isinstance(user_id, str):
             raise ValueError("Invalid user_id")
@@ -134,24 +167,38 @@ class AgentRuntime:
         if not message or not isinstance(message, str):
             raise ValueError("Invalid message")
 
+    # -------------------------
+    # 🧠 STATE
+    # -------------------------
+
     def _update_state(self, message: str):
         msg = message.lower()
 
         if any(w in msg for w in ["good", "great", "thanks"]):
             self.state.apply_event("positive_interaction")
+
         elif any(w in msg for w in ["bad", "angry", "hate"]):
             self.state.apply_event("negative_interaction")
+
         else:
             self.state.apply_event("neutral_chat")
+
+    # -------------------------
+    # 🧠 ERROR HANDLER
+    # -------------------------
 
     def _error_response(self, error: str):
         return {
             "response": f"Error: {error}",
             "state": self.state.to_dict(),
             "memory_count": len(self.memory.memories),
-            "trace": self.trace.get_all() if hasattr(self.trace, "get_all") else [],
+            "trace": self.trace.get_all(),
             "error": error
         }
+
+    # -------------------------
+    # 🧠 PROMPT BUILDER (simple fallback)
+    # -------------------------
 
     def _build_prompt(self, message, memory):
         mem_text = "\n".join([m["content"] for m in memory]) if memory else ""
