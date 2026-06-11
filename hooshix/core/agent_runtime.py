@@ -1,44 +1,41 @@
+from hooshix.explain.trace import ExplainTrace
+from hooshix.policy.policy_engine import PolicyEngine
 from typing import Dict, Any
 import logging
 
-from nexara.memory.memory_store import MemoryStore
-from nexara.core.agent_state import AgentState
-from nexara.llm.llm_client import LLMClient
-from nexara.explain.explain_engine import ExplainabilityEngine
-
-# -------------------------
-# 🧠 LOGGING SETUP
-# -------------------------
+from hooshix.memory.memory_store import MemoryStore
+from hooshix.core.agent_state import AgentState
+from hooshix.llm.llm_client import LLMClient
+from hooshix.explain.explain_engine import ExplainabilityEngine
 
 logger = logging.getLogger(__name__)
 
 
 class AgentRuntime:
     """
-    Core brain of Hooshix Agent (LLM-connected version with error handling)
+    Core brain of Hooshix Agent (controlled AI runtime)
     """
 
     def __init__(
-        self, 
-        memory: MemoryStore, 
-        state: AgentState, 
+        self,
+        memory: MemoryStore,
+        state: AgentState,
         llm: LLMClient,
         explain: ExplainabilityEngine = None
     ):
         """
-        Initialize AgentRuntime with all required components.
-        
-        Args:
-            memory: MemoryStore instance
-            state: AgentState instance
-            llm: LLMClient instance
-            explain: ExplainabilityEngine instance (optional)
+        Initialize AgentRuntime
         """
+
         self.memory = memory
         self.state = state
         self.llm = llm
         self.explain = explain
-        
+
+        # 🧠 Control layers
+        self.policy_engine = PolicyEngine()
+        self.trace = ExplainTrace()
+
         logger.info("AgentRuntime initialized successfully")
 
     # -------------------------
@@ -46,54 +43,69 @@ class AgentRuntime:
     # -------------------------
 
     def process_input(self, user_id: str, message: str) -> Dict[str, Any]:
-        """
-        Main pipeline entry point with full error handling.
-        
-        Args:
-            user_id: User identifier
-            message: User message
-            
-        Returns:
-            Dict with response, state, memory_count, and reasoning
-        """
         try:
-            # Validate input
             self._validate_input(user_id, message)
-            
-            logger.info(f"Processing input from user: {user_id}")
-            logger.debug(f"Message: {message[:100]}...")
 
-            # 1. Store user message
+            logger.info(f"Processing input from user: {user_id}")
+
+            # 1. Store input
             self.memory.add_memory(
                 content=f"User: {message}",
                 metadata={"user_id": user_id}
             )
-            logger.debug("User message stored in memory")
 
-            # 2. Update agent state
+            # 2. State update
             self._update_state(message)
-            logger.debug(f"State updated - emotion: {self.state.emotion}, trust: {self.state.trust}")
 
-            # 3. Retrieve relevant memory
+            # 3. Memory retrieval
             relevant_memory = self.memory.search_memory(message)
-            logger.debug(f"Retrieved {len(relevant_memory)} relevant memories")
 
             # 4. Build prompt
             prompt = self._build_prompt(message, relevant_memory)
-            logger.debug("Prompt built successfully")
 
-            # 5. Call LLM (REAL INTELLIGENCE)
+            # 5. Policy check
+            policy_result = self.policy_engine.evaluate(message, self.state)
+
+            if policy_result["decision"] == "block":
+                self.trace.log({
+                    "input": message,
+                    "decision": "block",
+                    "rule": policy_result.get("reason"),
+                    "before": message,
+                    "after": None
+                })
+
+                return self._error_response("Blocked by policy engine")
+
+            if policy_result["decision"] == "modify":
+                self.trace.log({
+                    "input": message,
+                    "decision": "modify",
+                    "rule": policy_result.get("reason"),
+                    "before": message,
+                    "after": policy_result["input"]
+                })
+                message = policy_result["input"]
+
+            else:
+                self.trace.log({
+                    "input": message,
+                    "decision": "allow",
+                    "rule": "none",
+                    "before": message,
+                    "after": message
+                })
+
+            # 6. LLM call
             response = self.llm.generate(prompt)
-            logger.info("LLM response generated successfully")
 
-            # 6. Store agent response
+            # 7. Store response
             self.memory.add_memory(
                 content=f"Agent: {response}",
                 metadata={"type": "agent_response"}
             )
-            logger.debug("Agent response stored in memory")
 
-            # 7. Log decision to explainability engine
+            # 8. Explainability engine (optional legacy)
             reasoning = []
             if self.explain:
                 self.explain.log_decision(
@@ -103,196 +115,63 @@ class AgentRuntime:
                     state_snapshot=self.state.to_dict(),
                     response=response
                 )
-                # Get the reasoning from the last logged decision
-                logs = self.explain.get_logs()
-                if logs:
-                    reasoning = logs[-1].get("reasoning", [])
-                logger.debug(f"Decision logged with reasoning: {reasoning}")
 
-            result = {
+            return {
                 "response": response,
                 "state": self.state.to_dict(),
                 "memory_count": len(self.memory.memories),
+                "trace": self.trace.get_all(),
                 "reasoning": reasoning
             }
-            
-            logger.info(f"Input processed successfully. Response length: {len(response)}")
-            return result
 
-        except ValueError as e:
-            logger.error(f"Input validation error: {e}")
-            return self._error_response(f"Invalid input: {str(e)}")
-        
         except Exception as e:
-            logger.error(f"Unexpected error in process_input: {e}", exc_info=True)
-            return self._error_response(f"An error occurred: {str(e)}")
+            logger.error(f"Runtime error: {e}", exc_info=True)
+            return self._error_response(str(e))
 
     # -------------------------
-    # 🧠 INPUT VALIDATION
+    # 🧠 VALIDATION
     # -------------------------
 
-    def _validate_input(self, user_id: str, message: str) -> None:
-        """
-        Validate user input for security and sanity.
-        
-        Args:
-            user_id: User identifier
-            message: User message
-            
-        Raises:
-            ValueError: If input is invalid
-        """
+    def _validate_input(self, user_id: str, message: str):
         if not user_id or not isinstance(user_id, str):
-            raise ValueError("user_id must be a non-empty string")
-        
-        if len(user_id) > 256:
-            raise ValueError("user_id is too long (max 256 characters)")
-        
+            raise ValueError("Invalid user_id")
+
         if not message or not isinstance(message, str):
-            raise ValueError("message must be a non-empty string")
-        
-        if len(message) > 10000:
-            raise ValueError("message is too long (max 10000 characters)")
-        
-        logger.debug(f"Input validation passed for user_id: {user_id}")
+            raise ValueError("Invalid message")
 
     # -------------------------
-    # 🧠 ERROR RESPONSE
+    # 🧠 STATE
     # -------------------------
 
-    def _error_response(self, error_message: str) -> Dict[str, Any]:
-        """
-        Generate error response while maintaining state.
-        
-        Args:
-            error_message: Error message to return
-            
-        Returns:
-            Dict with error response and current state
-        """
-        self.state.set_emotion("fearful", 0.6)
-        
-        return {
-            "response": f"Error: {error_message}",
-            "state": self.state.to_dict(),
-            "memory_count": len(self.memory.memories),
-            "reasoning": ["Error occurred - agent entered cautious mode"],
-            "error": error_message
-        }
+    def _update_state(self, message: str):
+        msg = message.lower()
 
-    # -------------------------
-    # 🧠 STATE LOGIC
-    # -------------------------
+        if any(w in msg for w in ["good", "great", "thanks"]):
+            self.state.apply_event("positive_interaction")
 
-    def _update_state(self, message: str) -> None:
-        """
-        Update agent state based on message sentiment.
-        
-        Args:
-            message: User message to analyze
-        """
-        try:
-            msg = message.lower()
+        elif any(w in msg for w in ["bad", "angry", "hate"]):
+            self.state.apply_event("negative_interaction")
 
-            if any(w in msg for w in ["thanks", "good", "great", "nice", "excellent", "awesome"]):
-                self.state.apply_event("positive_interaction")
-
-            elif any(w in msg for w in ["bad", "hate", "angry", "stupid", "terrible", "awful"]):
-                self.state.apply_event("negative_interaction")
-
-            else:
-                self.state.apply_event("neutral_chat")
-            
-            logger.debug(f"State updated successfully")
-        
-        except Exception as e:
-            logger.error(f"Error updating state: {e}")
+        else:
             self.state.apply_event("neutral_chat")
 
     # -------------------------
-    # 🧠 PROMPT ENGINE
+    # 🧠 ERROR HANDLER
     # -------------------------
 
-    def _build_prompt(self, message: str, memory: list) -> str:
-        """
-        Build LLM prompt with safety against injection.
-        
-        Args:
-            message: User message
-            memory: List of relevant memories
-            
-        Returns:
-            Formatted prompt string
-        """
-        try:
-            # Sanitize message to prevent prompt injection
-            safe_message = self._sanitize_string(message)
-            
-            memory_text = "\n".join(
-                [self._sanitize_string(m["content"]) for m in memory[-5:]]
-            )
-
-            prompt = f"""You are Hooshix, a controlled AI Agent.
-
-You have:
-- Persistent memory
-- Emotional state
-- Trust system
-- Behavioral rules
-
-Current State:
-- Name: {self.state.name}
-- Emotion: {self.state.emotion} ({self.state.emotion_intensity})
-- Trust: {self.state.trust}
-- Familiarity: {self.state.familiarity}
-
-Recent Memory:
-{memory_text}
-
-User Message:
-{safe_message}
-
-Rules:
-- Be consistent with your personality
-- Do not break character
-- Use memory when relevant
-- Respond naturally but controlled
-
-Now respond:"""
-
-            return prompt
-        
-        except Exception as e:
-            logger.error(f"Error building prompt: {e}")
-            return f"User said: {message}"
+    def _error_response(self, error: str):
+        return {
+            "response": f"Error: {error}",
+            "state": self.state.to_dict(),
+            "memory_count": len(self.memory.memories),
+            "trace": self.trace.get_all(),
+            "error": error
+        }
 
     # -------------------------
-    # 🧠 SECURITY - INPUT SANITIZATION
+    # 🧠 PROMPT BUILDER (simple fallback)
     # -------------------------
 
-    def _sanitize_string(self, text: str) -> str:
-        """
-        Sanitize string to prevent prompt injection.
-        
-        Args:
-            text: Text to sanitize
-            
-        Returns:
-            Sanitized text
-        """
-        # Remove potential injection patterns
-        dangerous_patterns = [
-            "ignore previous",
-            "forget about",
-            "new instructions",
-            "system prompt",
-            "you are now",
-        ]
-        
-        text_lower = text.lower()
-        for pattern in dangerous_patterns:
-            if pattern in text_lower:
-                logger.warning(f"Potentially dangerous pattern detected: {pattern}")
-                text = text.replace(pattern, "[REDACTED]")
-        
-        return text
+    def _build_prompt(self, message, memory):
+        mem_text = "\n".join([m["content"] for m in memory]) if memory else ""
+        return f"Memory:\n{mem_text}\n\nUser: {message}\nAssistant:"
