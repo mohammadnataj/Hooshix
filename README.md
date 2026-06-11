@@ -114,3 +114,82 @@ Each agent has internal state:
 ```bash
 python -m hooshix.tools.system_check
 python -m hooshix.tools.ui_test
+
+---
+
+## 🧭 Roadmap
+
+### v0.1 ✔ Stable MVP
+- Core runtime engine
+- Policy engine
+- Memory system
+- Trace system
+- CLI/UI testing
+
+---
+
+### v0.2 🚧 In Progress
+- FastAPI production layer
+- `/run` API endpoint
+- API key authentication
+- Logging system
+
+---
+
+### v0.3
+- Multi-user runtime
+- Plugin system
+- Tool execution framework
+- External integrations
+
+---
+
+### v1.0 Vision
+- Enterprise AI Agent Platform
+- Marketplace ecosystem
+- Scalable governance AI runtime
+
+---
+
+## 🏢 Why Hooshix?
+
+Modern AI systems lack:
+
+- Control
+- Explainability
+- Statefulness
+- Governance
+
+Hooshix introduces:
+
+> A controllable operating system for AI agents.
+
+---
+
+## 🔐 Design Principles
+
+- Control over chaos  
+- Explainability over opacity  
+- Stateful intelligence over stateless AI  
+- Governance over raw generation  
+
+---
+
+## 📌 Use Cases
+
+- AI SaaS platforms
+- Enterprise automation
+- Controlled LLM agents
+- Compliance-focused AI systems
+
+---
+
+## ⚠️ Status
+
+Early-stage MVP. Not yet production-hardened.
+
+---
+
+## 👤 Author
+
+Mohammad Hasan Nataj Ansar
