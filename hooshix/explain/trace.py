@@ -1,17 +1,16 @@
-import time
-from typing import Dict, Any, List
-
-
 class ExplainTrace:
-    def __init__(self):
-        self.traces: List[Dict[str, Any]] = []
+    """
+    Simple trace system for Hooshix runtime
+    """
 
-    def log(self, trace: Dict[str, Any]):
-        trace["timestamp"] = time.time()
+    def __init__(self):
+        self.traces = []
+
+    def add(self, trace: dict):
+        self.traces.append(trace)
+
+    def log(self, trace: dict):
         self.traces.append(trace)
 
     def get_all(self):
         return self.traces
-
-    def clear(self):
-        self.traces = []
