@@ -11,7 +11,7 @@ from nexara.core.agent_runtime import AgentRuntime
 # 🚀 INIT SYSTEM
 # -------------------------
 
-app = FastAPI(title="Nexara API", version="1.0")
+app = FastAPI(title="Hooshix API", version="1.0")
 
 memory = MemoryStore()
 state = AgentState()

@@ -5,7 +5,7 @@ from typing import Optional
 class LLMClient:
     """
     Abstraction layer for LLM providers.
-    Nexara does NOT depend on a single model.
+    Hooshix does NOT depend on a single model.
     """
 
     def __init__(self, provider: str = "mock"):
@@ -47,7 +47,7 @@ class LLMClient:
         if "emotion" in prompt.lower():
             return "Emotion state acknowledged."
 
-        return "I am Nexara Agent responding in controlled mode."
+        return "I am Hooshix Agent responding in controlled mode."
 
     # -------------------------
     # 🤖 OPENAI INTEGRATION (Phase 2)

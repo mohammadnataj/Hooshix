@@ -28,7 +28,7 @@ async function sendMessage() {
         const data = await response.json();
 
         // نمایش پاسخ Agent
-        chatBox.innerHTML += `<div class="agent">🧠 Nexara: ${data.response}</div>`;
+        chatBox.innerHTML += `<div class="agent">🧠 Hooshix: ${data.response}</div>`;
 
         // نمایش state
         document.getElementById("state").innerText =

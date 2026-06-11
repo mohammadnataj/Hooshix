@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class AgentRuntime:
     """
-    Core brain of Nexara Agent (LLM-connected version with error handling)
+    Core brain of Hooshix Agent (LLM-connected version with error handling)
     """
 
     def __init__(
@@ -232,7 +232,7 @@ class AgentRuntime:
                 [self._sanitize_string(m["content"]) for m in memory[-5:]]
             )
 
-            prompt = f"""You are Nexara, a controlled AI Agent.
+            prompt = f"""You are Hooshix, a controlled AI Agent.
 
 You have:
 - Persistent memory

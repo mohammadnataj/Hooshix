@@ -18,7 +18,7 @@ class MemoryItem:
 
 class MemoryStore:
     """
-    Simple in-memory storage for Nexara Agent.
+    Simple in-memory storage for Hooshix Agent.
     Phase 1: no vector DB, no embeddings, just structured memory.
     """
 

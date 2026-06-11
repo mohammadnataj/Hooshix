@@ -5,13 +5,13 @@ from typing import Dict, Any
 @dataclass
 class AgentState:
     """
-    Core runtime state of a Nexara Agent.
+    Core runtime state of a Hooshix Agent.
     This controls behavior, trust, and emotional baseline.
     """
 
     # 🧠 Identity
     agent_id: str = "nexara_agent"
-    name: str = "Nexara"
+    name: str = "Hooshix"
 
     # ❤️ Relationship State
     trust: float = 0.5          # 0.0 - 1.0

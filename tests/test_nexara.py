@@ -1,5 +1,5 @@
 """
-Test suite for Nexara Agent Runtime
+Test suite for Hooshix Agent Runtime
 Run: python -m pytest tests/test_nexara.py -v
 """
 
@@ -48,7 +48,7 @@ class TestAgentState:
         assert state.trust == 0.5
         assert state.familiarity == 0.0
         assert state.emotion == "neutral"
-        assert state.name == "Nexara"
+        assert state.name == "Hooshix"
 
     def test_update_trust(self):
         state = AgentState()
@@ -309,7 +309,7 @@ def runtime(memory, state, llm):
 
 if __name__ == "__main__":
     # Simple run without pytest
-    print("🚀 Running Nexara Tests...\n")
+    print("🚀 Running Hooshix Tests...\n")
     
     # Test 1: Memory
     print("📚 Test 1: Memory Store")
@@ -336,7 +336,7 @@ if __name__ == "__main__":
     state = AgentState()
     llm = LLMClient(provider="mock")
     runtime = AgentRuntime(memory, state, llm)
-    result = runtime.process_input("user_1", "Hello Nexara!")
+    result = runtime.process_input("user_1", "Hello Hooshix!")
     print(f"✅ Response: {result['response']}")
     print(f"✅ Memory count: {result['memory_count']}")
     print(f"✅ Current emotion: {result['state']['emotion']}\n")

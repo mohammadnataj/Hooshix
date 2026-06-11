@@ -1,4 +1,4 @@
-# 🧠 Nexara
+# 🧠 Hooshix
 
 ![Status](https://img.shields.io/badge/status-in%20development-blue)
 ![Architecture](https://img.shields.io/badge/architecture-agent%20runtime-purple)
@@ -7,11 +7,11 @@
 
 ---
 
-## 🧩 What is Nexara?
+## 🧩 What is Hooshix?
 
-**Nexara is a Controlled AI Agent Runtime Framework that transforms large language models into persistent, explainable, and behavior-controlled digital agents.**
+**Hooshix is a Controlled AI Agent Runtime Framework that transforms large language models into persistent, explainable, and behavior-controlled digital agents.**
 
-Nexara provides a structured intelligence layer on top of LLMs, allowing developers to build stable AI agents with:
+Hooshix provides a structured intelligence layer on top of LLMs, allowing developers to build stable AI agents with:
 
 - Persistent memory
 - Relationship modeling
@@ -19,7 +19,7 @@ Nexara provides a structured intelligence layer on top of LLMs, allowing develop
 - Explainability
 - Developer observability
 
-Nexara is designed to solve one of the biggest problems in modern AI systems:
+Hooshix is designed to solve one of the biggest problems in modern AI systems:
 
 > LLMs are powerful, but unstable and difficult to control.
 
@@ -29,7 +29,7 @@ Nexara is designed to solve one of the biggest problems in modern AI systems:
 
 > "Control over autonomy. Stability over randomness. Structure over chaos."
 
-Nexara prioritizes:
+Hooshix prioritizes:
 
 - Predictability over improvisation
 - Controlled behavior over unrestricted autonomy
@@ -42,7 +42,7 @@ Nexara prioritizes:
 
 ### 🧠 Persistent Memory System
 
-Nexara agents can:
+Hooshix agents can:
 
 - Store long-term interaction history
 - Retrieve context-relevant memories
@@ -67,7 +67,7 @@ Relationship states influence future responses and behaviors.
 
 ### 🧭 Behavior Control Layer
 
-Nexara enforces structured behavioral constraints on top of LLM outputs:
+Hooshix enforces structured behavioral constraints on top of LLM outputs:
 
 - Personality boundaries
 - Lore consistency
@@ -83,7 +83,7 @@ This prevents unstable or contradictory agent behavior.
 
 Every important decision can be traced and inspected.
 
-Nexara can explain:
+Hooshix can explain:
 
 - Why a response was generated
 - Which memory influenced the output
@@ -94,7 +94,7 @@ Nexara can explain:
 
 ### 🧩 Developer Control Layer
 
-Nexara provides runtime observability and control tools:
+Hooshix provides runtime observability and control tools:
 
 - Memory inspection
 - State debugging
@@ -140,7 +140,7 @@ Final Output
 
 ## 🚀 Target Use Cases
 
-Nexara is designed for:
+Hooshix is designed for:
 
 - 🎮 AI-driven game agents
 - 📖 Interactive storytelling systems
@@ -188,7 +188,7 @@ Nexara is designed for:
 
 ## 🔮 Long-Term Vision
 
-Nexara aims to become the foundational runtime layer for controllable AI agents in interactive systems.
+Hooshix aims to become the foundational runtime layer for controllable AI agents in interactive systems.
 
 The long-term goal is to enable developers to build AI agents that are:
 
@@ -204,15 +204,15 @@ without sacrificing the flexibility and intelligence of modern LLMs.
 
 ## 📌 Current Status
 
-Nexara is currently in:
+Hooshix is currently in:
 
 **Early architecture and MVP development phase.**
 
 ---
 
-## 🚫 What Nexara is NOT
+## 🚫 What Hooshix is NOT
 
-Nexara is explicitly NOT:
+Hooshix is explicitly NOT:
 
 - ❌ A chatbot framework
 - ❌ A game engine
