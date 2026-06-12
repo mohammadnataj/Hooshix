@@ -1,4 +1,20 @@
+# environment
+.env
+
+# python cache
 __pycache__/
 *.pyc
-*.pyo
+
+# logs
+*.log
+
+# secrets
+*.key
+*.pem
+*.secret
+
+# OS files
 .DS_Store
+
+# test artifacts
+*.sqlite
