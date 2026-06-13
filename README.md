@@ -159,4 +159,4 @@ Explainability over opacity
 Stateful AI over stateless prompts
 Governance over raw generation
 👤 Author
-Mohammad Hasan Nataj Ansar
+Mohammad Hassan Nataj Ansar
